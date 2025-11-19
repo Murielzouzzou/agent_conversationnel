@@ -1,9 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 from groq import Groq
 
 app = Flask(__name__)
-
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 @app.route("/api/chat", methods=["POST"])
@@ -22,11 +21,11 @@ def chat():
     answer = completion.choices[0].message.content
     return jsonify({"reply": answer})
 
+# Route pour servir le front HTML
 @app.route("/")
 def home():
-    return "Server is up"
+    return send_from_directory('.', 'index.html')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port)
-
