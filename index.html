@@ -1,58 +1,150 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Chatbot Médical</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    #chat { border: 1px solid #ccc; padding: 1rem; height: 300px; overflow-y: auto; }
-    #userInput { width: 80%; padding: 0.5rem; }
-    button { padding: 0.5rem 1rem; }
-    .message { margin: 0.5rem 0; }
-    .user { color: blue; }
-    .bot { color: green; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Médical</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFF0F5; /* lavande très claire */
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #FF69B4; /* rose vif */
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #chat {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .message {
+            padding: 0.6rem 1rem;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .user {
+            background-color: #FFB6C1; /* rose pastel */
+            align-self: flex-end;
+            color: #333;
+        }
+
+        .bot {
+            background-color: #FFFFFF; /* blanc pur */
+            align-self: flex-start;
+            border-left: 4px solid #FF69B4; /* accent girly */
+            color: #333;
+        }
+
+        #input-area {
+            display: flex;
+            padding: 1rem;
+            background-color: #FFE4E1; /* rose pâle */
+            border-top: 1px solid #FFB6C1;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #FFB6C1;
+            border-radius: 25px;
+            outline: none;
+        }
+
+        #message-input:focus {
+            border-color: #FF69B4;
+            box-shadow: 0 0 5px rgba(255,105,180,0.5);
+        }
+
+        #send-btn {
+            padding: 0.6rem 1.5rem;
+            margin-left: 0.5rem;
+            background-color: #FF69B4;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        #send-btn:hover {
+            background-color: #FF1493;
+        }
+
+        /* Scrollbar jolie */
+        #chat::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat::-webkit-scrollbar-thumb {
+            background-color: #FFB6C1;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
+    <header>Chatbot Médical</header>
+    <div id="chat"></div>
+    <div id="input-area">
+        <input type="text" id="message-input" placeholder="Écrivez votre message..." />
+        <button id="send-btn">Envoyer</button>
+    </div>
 
-  <h1>Chatbot Médical</h1>
-  <div id="chat"></div>
-  <input type="text" id="userInput" placeholder="Écris ton message...">
-  <button onclick="sendMessage()">Envoyer</button>
+    <script>
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('message-input');
+        const button = document.getElementById('send-btn');
 
-  <script>
-    const chatDiv = document.getElementById('chat');
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.classList.add('message', sender);
+            div.textContent = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
 
-    function appendMessage(role, text) {
-      const msgDiv = document.createElement('div');
-      msgDiv.classList.add('message');
-      msgDiv.classList.add(role);
-      msgDiv.textContent = (role === 'user' ? 'Vous: ' : 'Bot: ') + text;
-      chatDiv.appendChild(msgDiv);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
+        async function sendMessage() {
+            const message = input.value.trim();
+            if (!message) return;
+            addMessage(message, 'user');
+            input.value = '';
 
-    async function sendMessage() {
-      const input = document.getElementById('userInput');
-      const message = input.value.trim();
-      if (!message) return;
-      appendMessage('user', message);
-      input.value = '';
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                addMessage(data.reply, 'bot');
+            } catch (err) {
+                addMessage('Erreur serveur : impossible de contacter le bot.', 'bot');
+            }
+        }
 
-      try {
-        const response = await fetch('https://dis-ce-que-tu-veux-girl.onrender.com/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
+        button.addEventListener('click', sendMessage);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
-        const data = await response.json();
-        appendMessage('bot', data.reply);
-      } catch (err) {
-        appendMessage('bot', 'Erreur : impossible de contacter le serveur.');
-        console.error(err);
-      }
-    }
-  </script>
-
+    </script>
 </body>
 </html>
